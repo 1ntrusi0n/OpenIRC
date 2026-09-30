@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "OpenIRC"
+dynamic = ["version"]
+description = "Independent IRC/IRCX server and native desktop administration console"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE", "docs/third-party-notices.md"]
+authors = [{name = "OpenIRC contributors"}]
+dependencies = ["argon2-cffi>=23.1,<26"]
+classifiers = ["Programming Language :: Python :: 3", "Topic :: Communications :: Chat :: Internet Relay Chat", "Operating System :: OS Independent"]
+
+[project.optional-dependencies]
+gui = ["PyQt6>=6.7,<7"]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.24", "pytest-qt>=4.4", "cryptography>=42", "build>=1.2"]
+
+[project.scripts]
+openirc = "OpenIRC.app:main"
+
+[project.urls]
+Repository = "https://github.com/1ntrusi0n/OpenIRC"
+
+[tool.setuptools.dynamic]
+version = {attr = "OpenIRC.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["OpenIRC*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["error::ResourceWarning"]
