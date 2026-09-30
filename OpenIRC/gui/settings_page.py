@@ -197,7 +197,7 @@ class SettingsPage(Page):
 
 
 class SetupWizard(QWizard):
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: QWidget, *, start_server: bool = False):
         super().__init__(parent)
         self.setWindowTitle("Welcome to OpenIRC")
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
@@ -245,7 +245,7 @@ class SetupWizard(QWizard):
         form.addRow("Account username", self.username)
         form.addRow("Password", self.password)
         form.addRow("Confirm password", self.confirm_password)
-        note = QLabel("The server will remain stopped until you select Start Server.")
+        note = QLabel("The server will start listening when setup completes." if start_server else "The server will remain stopped until you select Start Server.")
         note.setWordWrap(True)
         form.addRow(note)
         self.addPage(admin)

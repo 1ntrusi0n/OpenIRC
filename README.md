@@ -6,7 +6,11 @@ The console manages the local server. Remote operators use their own IRC clients
 
 ## Install and run
 
-Windows PowerShell:
+On Windows, install Python 3.12 or newer, download or clone this repository, and double-click **[StartOpenIRC.bat](StartOpenIRC.bat)** in the main folder. It creates a local `.venv`, installs missing desktop dependencies, opens the console, and starts the server. The first installation needs internet access. On first launch, complete the setup wizard before listeners start; subsequent launches reuse your environment and saved settings. The built-in Chat page still requires its own explicit operator login.
+
+The launcher accepts the same options as the application, for example `StartOpenIRC.bat --debug` or `StartOpenIRC.bat --data-dir "D:\OpenIRC Data"`. It uses `--start-server` for this launch without changing the saved automatic-start setting.
+
+For manual installation from Windows PowerShell:
 
 ```powershell
 git clone https://github.com/1ntrusi0n/OpenIRC.git
@@ -18,7 +22,7 @@ py -3.13 -m venv .venv
 
 Python 3.12 works as well. On Linux/macOS, create the environment with `python3 -m venv .venv` and use `.venv/bin/python` in the remaining commands. Alternatively, install the desktop dependencies with `python -m pip install -r requirements.txt`.
 
-The first-run wizard creates the settings and first administrator account without internet access. The console initially shows **Stopped**. Click **Start Server**, then connect an IRC client to the configured listening address. Default ports are **6667** for IRC and **6697** for TLS; default binding is **127.0.0.1**. Select `0.0.0.0`, `::`, or a specific local interface to serve other machines. TLS remains disabled until a valid PEM certificate and private key have been selected.
+The first-run wizard creates the settings and first administrator account without internet access. With `python -m OpenIRC`, the console initially shows **Stopped** unless automatic startup is enabled. Click **Start Server**, or launch with `python -m OpenIRC --start-server`, then connect an IRC client to the configured listening address. Default ports are **6667** for IRC and **6697** for TLS; default binding is **127.0.0.1**. Select `0.0.0.0`, `::`, or a specific local interface to serve other machines. TLS remains disabled until a valid PEM certificate and private key have been selected.
 
 The desktop console is trusted local administration: anyone able to run it against the data directory can administer that server. The wizard's account credentials are used for IRC authentication/OPER and the built-in chat panel, not for locking the console. Protect the host account and data directory accordingly.
 

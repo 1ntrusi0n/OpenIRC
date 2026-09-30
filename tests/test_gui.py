@@ -105,6 +105,51 @@ def test_gui_debug_flag_reaches_server_bridge(qtbot, tmp_path):
     window._shutdown_complete = True
 
 
+@pytest.mark.parametrize("requested,saved,expected", [(False, False, 0), (True, False, 1), (False, True, 1), (True, True, 1)])
+def test_start_on_launch_runs_once_without_changing_settings(console, requested, saved, expected):
+    window, bridge = console
+    window._setup_shown = False
+    window._start_server_on_launch = requested
+    settings = ServerSettings(setup_complete=True, auto_start=saved).to_dict()
+    window.receive_snapshot(snapshot(settings=settings))
+    window.receive_snapshot(snapshot(settings=settings))
+    assert [request[1] for request in bridge.requests] == ["start"] * expected
+    assert window.snapshot.settings["auto_start"] is saved
+
+
+@pytest.mark.parametrize("requested,outcome", [(True, "success"), (True, "failure"), (True, "cancel"), (False, "success")])
+def test_first_run_starts_only_after_successful_setup(console, monkeypatch, requested, outcome):
+    window, bridge = console
+    window._start_server_on_launch = requested
+    monkeypatch.setattr(SetupWizard, "exec", lambda self: outcome != "cancel")
+    monkeypatch.setattr(SetupWizard, "payload", lambda self: {"username": "admin", "password": "test-password"})
+    failures = []
+    monkeypatch.setattr(window, "setup_failed", failures.append)
+    window.first_run()
+    assert not any(request[1] == "start" for request in bridge.requests)
+    if outcome == "cancel":
+        assert not bridge.requests
+        return
+    token, action, _ = bridge.requests[-1]
+    assert action == "setup"
+    if outcome == "failure":
+        bridge.failed.emit(token, "Setup could not be saved")
+        assert failures == ["Setup could not be saved"]
+    else:
+        bridge.completed.emit(token, {})
+    assert sum(request[1] == "start" for request in bridge.requests) == int(requested and outcome == "success")
+
+
+@pytest.mark.parametrize("requested", [False, True])
+def test_cli_passes_start_server_to_gui(monkeypatch, tmp_path, requested):
+    from OpenIRC.app import main
+    launches = []
+    monkeypatch.setattr("OpenIRC.gui.main_window.run_gui", lambda path, debug, **options: launches.append((path, debug, options)) or 0)
+    args = ["--data-dir", str(tmp_path), "--debug"] + (["--start-server"] if requested else [])
+    assert main(args) == 0
+    assert launches == [(tmp_path, True, {"start_server": requested})]
+
+
 def test_sortable_table_keeps_identity_and_clears_stale_selection(qtbot):
     table = DataTable([("Nickname", "nick"), ("Bytes", "bytes")])
     qtbot.addWidget(table)

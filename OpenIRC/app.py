@@ -64,6 +64,7 @@ async def run_headless(args) -> int:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="OpenIRC IRC/IRCX server and administration console")
     parser.add_argument("--headless", action="store_true", help="Run the server without Qt")
+    parser.add_argument("--start-server", action="store_true", help="Start GUI listeners after loading configuration or completing first-run setup")
     parser.add_argument("--debug", action="store_true", help="Enable diagnostic logs (credentials are always excluded)")
     parser.add_argument("--data-dir", type=Path, default=default_data_dir(), help="Configuration, database and log directory")
     parser.add_argument("--init-admin", action="store_true", help="Initialize a headless instance interactively")
@@ -73,7 +74,7 @@ def main(argv=None) -> int:
         if args.headless or args.init_admin:
             return asyncio.run(run_headless(args))
         from OpenIRC.gui.main_window import run_gui
-        return run_gui(args.data_dir, args.debug)
+        return run_gui(args.data_dir, args.debug, start_server=args.start_server)
     except KeyboardInterrupt:
         return 130
     except ModuleNotFoundError as error:

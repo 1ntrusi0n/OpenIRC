@@ -34,7 +34,7 @@ def plain(obj: Any) -> Any:
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, data_dir: Path, *, bridge: Any = None, start_bridge: bool = True, debug: bool = False):
+    def __init__(self, data_dir: Path, *, bridge: Any = None, start_bridge: bool = True, debug: bool = False, start_server: bool = False):
         super().__init__()
         self.data_dir = Path(data_dir)
         self.setWindowTitle("OpenIRC — Server Administration")
@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self._snapshot_pending = False
         self._initialized = False
         self._setup_shown = False
+        self._start_server_on_launch = start_server
         self._closing = False
         self._force_exit = False
         self._shutdown_complete = False
@@ -266,7 +267,7 @@ class MainWindow(QMainWindow):
             self._setup_shown = True
             if not value(value(snapshot, "settings", {}), "setup_complete", False):
                 QTimer.singleShot(0, self.first_run)
-            elif value(value(snapshot, "settings", {}), "auto_start", False):
+            elif self._start_server_on_launch or value(value(snapshot, "settings", {}), "auto_start", False):
                 self.command("start")
 
     def update_actions(self) -> None:
@@ -279,11 +280,17 @@ class MainWindow(QMainWindow):
         self.actions["export"].setEnabled(self._initialized and not self._closing)
 
     def first_run(self) -> None:
-        wizard = SetupWizard(self)
+        wizard = SetupWizard(self, start_server=self._start_server_on_launch)
         if wizard.exec():
-            self.command("setup", wizard.payload(), failure=self.setup_failed)
+            self.command("setup", wizard.payload(), callback=self.setup_completed, failure=self.setup_failed)
         else:
             self.statusBar().showMessage("Setup cancelled. Create accounts and configure the server before starting.")
+
+    def setup_completed(self, result: Any) -> None:
+        if self._start_server_on_launch:
+            self.command("start")
+        else:
+            self.statusBar().showMessage("Setup completed. Select Start Server to start listening.")
 
     def setup_failed(self, message: str) -> None:
         QMessageBox.warning(self, "Setup needs attention", message)
@@ -361,13 +368,13 @@ class MainWindow(QMainWindow):
             app.quit()
 
 
-def run_gui(data_dir: Path, debug: bool = False) -> int:
+def run_gui(data_dir: Path, debug: bool = False, *, start_server: bool = False) -> int:
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("OpenIRC")
     app.setOrganizationName("OpenIRC")
     app.setWindowIcon(brand_icon("stopped"))
     app.setQuitOnLastWindowClosed(False)
-    window = MainWindow(Path(data_dir), debug=debug)
+    window = MainWindow(Path(data_dir), debug=debug, start_server=start_server)
     window.show()
     return app.exec()
 
